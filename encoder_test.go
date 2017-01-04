@@ -31,18 +31,7 @@ func TestEncoderRoundTrip(t *testing.T) {
 			t.Fatalf("couldn't read buffer %s %v", tc.in, err)
 		}
 
-		// pcm := d.PCM()
-		// numChannels, bitDepth, sampleRate, err := pcm.Info()
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		// totalFrames := pcm.Size()
-		// frames, err := d.FramesInt()
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
 		in.Close()
-		// t.Logf("%s - total frames %d - total samples %d", tc.in, totalFrames, len(frames))
 
 		out, err := os.Create(tc.out)
 		if err != nil {
@@ -51,7 +40,7 @@ func TestEncoderRoundTrip(t *testing.T) {
 
 		e := wav.NewEncoder(out,
 			buf.Format.SampleRate,
-			buf.Format.BitDepth,
+			int(d.BitDepth),
 			buf.Format.NumChannels,
 			int(d.WavAudioFormat))
 		if err := e.Write(buf); err != nil {
@@ -85,9 +74,6 @@ func TestEncoderRoundTrip(t *testing.T) {
 
 		if nBuf.Format.SampleRate != buf.Format.SampleRate {
 			t.Fatalf("sample rate didn't support roundtripping exp: %d, got: %d", buf.Format.SampleRate, nBuf.Format.SampleRate)
-		}
-		if nBuf.Format.BitDepth != buf.Format.BitDepth {
-			t.Fatalf("sample size didn't support roundtripping exp: %d, got: %d", buf.Format.BitDepth, nBuf.Format.BitDepth)
 		}
 		if nBuf.Format.NumChannels != buf.Format.NumChannels {
 			t.Fatalf("the number of channels didn't support roundtripping exp: %d, got: %d", buf.Format.NumChannels, nBuf.Format.NumChannels)

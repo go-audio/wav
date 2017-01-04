@@ -57,7 +57,7 @@ func ExampleEncoder_Write() {
 	// setup the encoder and write all the frames
 	e := wav.NewEncoder(out,
 		buf.Format.SampleRate,
-		buf.Format.BitDepth,
+		int(d.BitDepth),
 		buf.Format.NumChannels,
 		int(d.WavAudioFormat))
 	if err := e.Write(buf); err != nil {

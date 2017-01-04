@@ -210,9 +210,6 @@ func TestDecoder_FullPCMBuffer(t *testing.T) {
 				t.Fatalf("Expected %d at position %d, but got %d", tc.samples[i], i, buf.Data[i])
 			}
 		}
-		if buf.Format.BitDepth != tc.bitDepth {
-			t.Fatalf("expected bitdepth to be %d but got %d", tc.bitDepth, buf.Format.BitDepth)
-		}
 		if buf.Format.SampleRate != tc.sampleRate {
 			t.Fatalf("expected samplerate to be %d but got %d", tc.sampleRate, buf.Format.SampleRate)
 		}
