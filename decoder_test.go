@@ -133,7 +133,7 @@ func TestDecoder_PCMBuffer(t *testing.T) {
 
 		intBuf := make([]int, len(tc.samples))
 		buf := &audio.IntBuffer{Data: intBuf}
-		err = d.PCMBuffer(buf)
+		_, err = d.PCMBuffer(buf)
 		if err != nil {
 			t.Fatal(err)
 		}
