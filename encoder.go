@@ -162,6 +162,7 @@ func (e *Encoder) Write(buf *audio.IntBuffer) error {
 		if err := e.AddLE(riff.DataFormatID); err != nil {
 			return fmt.Errorf("error encoding sound header %v", err)
 		}
+		e.pcmChunkStarted = true
 
 		// write a temporary chunksize
 		e.pcmChunkSizePos = e.WrittenBytes

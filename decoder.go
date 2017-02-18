@@ -39,6 +39,22 @@ func NewDecoder(r io.ReadSeeker) *Decoder {
 	}
 }
 
+// SampleBitDepth returns the bit depth encoding of each sample.
+func (d *Decoder) SampleBitDepth() int32 {
+	if d == nil {
+		return 0
+	}
+	return int32(d.BitDepth)
+}
+
+// PCMLen returns the total number of bytes in the PCM data chunk
+func (d *Decoder) PCMLen() int64 {
+	if d == nil {
+		return 0
+	}
+	return int64(d.PCMSize)
+}
+
 // Err returns the first non-EOF error that was encountered by the Decoder.
 func (d *Decoder) Err() error {
 	if d.err == io.EOF {
@@ -127,11 +143,19 @@ func (d *Decoder) FwdToPCM() error {
 	return nil
 }
 
+// WasPCMAccessed returns positively if the PCM data was previously accessed.
+func (d *Decoder) WasPCMAccessed() bool {
+	if d == nil {
+		return false
+	}
+	return d.pcmDataAccessed
+}
+
 // FullPCMBuffer is an inneficient way to access all the PCM data contained in the
 // audio container. The entire PCM data is held in memory.
 // Consider using Buffer() instead.
 func (d *Decoder) FullPCMBuffer() (*audio.IntBuffer, error) {
-	if !d.pcmDataAccessed {
+	if !d.WasPCMAccessed() {
 		err := d.FwdToPCM()
 		if err != nil {
 			return nil, d.err
@@ -176,46 +200,51 @@ func (d *Decoder) FullPCMBuffer() (*audio.IntBuffer, error) {
 }
 
 // PCMBuffer populates the passed PCM buffer
-func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) error {
+func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) (n int, err error) {
 	if buf == nil {
-		return nil
+		return 0, nil
 	}
 
 	if !d.pcmDataAccessed {
 		err := d.FwdToPCM()
 		if err != nil {
-			return d.err
+			return 0, d.err
 		}
-	}
-
-	// TODO: avoid a potentially unecessary allocation
-	format := &audio.Format{
-		NumChannels: int(d.NumChans),
-		SampleRate:  int(d.SampleRate),
 	}
 
 	bytesPerSample := (d.BitDepth-1)/8 + 1
 	sampleBufData := make([]byte, bytesPerSample)
 	decodeF, err := sampleDecodeFunc(int(d.BitDepth))
 	if err != nil {
-		return fmt.Errorf("could not get sample decode func %v", err)
+		return 0, fmt.Errorf("could not get sample decode func %v", err)
 	}
 
 	// Note that we populate the buffer even if the
 	// size of the buffer doesn't fit an even number of frames.
-	for i := 0; i < len(buf.Data); i++ {
+	for n = 0; n < len(buf.Data); n++ {
 		_, err = d.PCMChunk.Read(sampleBufData)
 		if err != nil {
 			break
 		}
-		buf.Data[i] = decodeF(sampleBufData)
+		buf.Data[n] = decodeF(sampleBufData)
 	}
 	if err == io.EOF {
 		err = nil
 	}
-	buf.Format = format
+	buf.Format = d.Format()
 
-	return err
+	return n, err
+}
+
+// Format returns the audio format of the decoded content.
+func (d *Decoder) Format() *audio.Format {
+	if d == nil {
+		return nil
+	}
+	return &audio.Format{
+		NumChannels: int(d.NumChans),
+		SampleRate:  int(d.SampleRate),
+	}
 }
 
 // NextChunk returns the next available chunk
@@ -327,6 +356,11 @@ func sampleDecodeFunc(bitsPerSample int) (func([]byte) int, error) {
 		// -34,359,738,367 (0x7FFFFF) to 34,359,738,368	(0x800000)
 		return func(s []byte) int {
 			return int(int32(s[0])<<8 | int32(s[1])<<16 | int32(s[2])<<24)
+			// ss := int32(s[0]) | int32(s[1])<<8 | int32(s[2])<<16
+			// if (ss & 0x800000) > 0 {
+			// 	ss |= ^0xffffff
+			// }
+			// return int(ss)
 		}, nil
 	case 32:
 		return func(s []byte) int {
