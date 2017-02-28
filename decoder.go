@@ -355,12 +355,7 @@ func sampleDecodeFunc(bitsPerSample int) (func([]byte) int, error) {
 	case 24:
 		// -34,359,738,367 (0x7FFFFF) to 34,359,738,368	(0x800000)
 		return func(s []byte) int {
-			return int(int32(s[0])<<8 | int32(s[1])<<16 | int32(s[2])<<24)
-			// ss := int32(s[0]) | int32(s[1])<<8 | int32(s[2])<<16
-			// if (ss & 0x800000) > 0 {
-			// 	ss |= ^0xffffff
-			// }
-			// return int(ss)
+			return int(audio.Int24LETo32(s))
 		}, nil
 	case 32:
 		return func(s []byte) int {
