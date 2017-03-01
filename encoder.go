@@ -143,12 +143,13 @@ func (e *Encoder) writeHeader() error {
 	if err := e.AddLE(uint32(e.SampleRate)); err != nil {
 		return fmt.Errorf("error encoding the sample rate - %v", err)
 	}
+	blockAlign := e.NumChans * e.BitDepth / 8
 	// avg bytes per sec
-	if err := e.AddLE(uint32(e.SampleRate * e.NumChans * e.BitDepth / 8)); err != nil {
+	if err := e.AddLE(uint32(e.SampleRate * blockAlign)); err != nil {
 		return fmt.Errorf("error encoding the avg bytes per sec - %v", err)
 	}
 	// block align
-	if err := e.AddLE(uint16(2)); err != nil {
+	if err := e.AddLE(uint16(blockAlign)); err != nil {
 		return err
 	}
 	// bits per sample
