@@ -169,7 +169,7 @@ func (d *Decoder) FullPCMBuffer() (*audio.IntBuffer, error) {
 		SampleRate:  int(d.SampleRate),
 	}
 
-	buf := &audio.IntBuffer{Data: make([]int, 4096), Format: format}
+	buf := &audio.IntBuffer{Data: make([]int, 4096), Format: format, SourceBitDepth: int(d.BitDepth)}
 	bytesPerSample := (d.BitDepth-1)/8 + 1
 	sampleBufData := make([]byte, bytesPerSample)
 	decodeF, err := sampleDecodeFunc(int(d.BitDepth))
@@ -232,6 +232,7 @@ func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) (n int, err error) {
 		err = nil
 	}
 	buf.Format = d.Format()
+	buf.SourceBitDepth = int(d.BitDepth)
 
 	return n, err
 }
