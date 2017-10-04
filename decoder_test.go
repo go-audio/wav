@@ -1,6 +1,7 @@
 package wav_test
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,6 +10,23 @@ import (
 	"github.com/go-audio/audio"
 	"github.com/go-audio/wav"
 )
+
+func TestDecoderSeek(t *testing.T) {
+	f, err := os.Open("fixtures/bass.wav")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	d := wav.NewDecoder(f)
+	// Move read cursor to the middle of the file
+	cur, err := d.Seek(d.PCMLen()/2, io.SeekStart)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cur != d.PCMLen()/2 {
+		t.Fatal("Read cursor no in the expected position")
+	}
+}
 
 func TestDecoder_Duration(t *testing.T) {
 	testCases := []struct {
