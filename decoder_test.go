@@ -1,7 +1,6 @@
 package wav_test
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,7 +18,8 @@ func TestDecoderSeek(t *testing.T) {
 	defer f.Close()
 	d := wav.NewDecoder(f)
 	// Move read cursor to the middle of the file
-	cur, err := d.Seek(d.PCMLen()/2, io.SeekStart)
+	// Using whence=0 should be os.SEEK_SET for go<=1.6.x else io.SeekStart
+	cur, err := d.Seek(d.PCMLen()/2, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
