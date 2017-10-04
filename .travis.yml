@@ -2,7 +2,9 @@ language: go
 go:
  - 1.5.4
  - 1.6.4
- - 1.7.4
+ - 1.7.6
+ - 1.8.3
+ - 1.9.0
  - tip
 sudo: false
 env:
