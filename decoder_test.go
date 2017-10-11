@@ -64,6 +64,37 @@ func TestDecoder_IsValidFile(t *testing.T) {
 
 }
 
+func TestReadContent(t *testing.T) {
+	testCases := []struct {
+		input string
+		total int64
+		err   error
+	}{
+		{"fixtures/kick.wav", 180896, nil},
+		{"fixtures/bwf.wav", 1003870765, nil},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.input, func(t *testing.T) {
+			r, err := os.Open(tc.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer r.Close()
+
+			d := wav.NewDecoder(r)
+			total, err := totaledDecoder(d)
+			if err != tc.err {
+				t.Errorf("Expected err to be %v but got %v", tc.err, err)
+			}
+			if total != tc.total {
+				t.Errorf("Expected total to be %d but got %d", tc.total, total)
+			}
+		})
+	}
+
+}
+
 func TestDecoder_Attributes(t *testing.T) {
 	testCases := []struct {
 		in             string
@@ -225,4 +256,46 @@ func TestDecoder_FullPCMBuffer(t *testing.T) {
 			t.Fatalf("Expected %d frames, got %d\n", tc.totalFrames, framesNbr)
 		}
 	}
+}
+
+func totaledDecoder(d *wav.Decoder) (total int64, err error) {
+	format := &audio.Format{
+		NumChannels: int(d.NumChans),
+		SampleRate:  int(d.SampleRate),
+	}
+
+	chunkSize := 4096
+	bits := d.BitDepth
+	buf := &audio.IntBuffer{Data: make([]int, chunkSize), Format: format}
+	var n int
+
+	for err == nil {
+		n, err = d.PCMBuffer(buf)
+		if err != nil {
+			break
+		}
+		if n == 0 {
+			break
+		}
+		for i, s := range buf.Data {
+			// the buffer is longer than than the data we have, we are done
+			if i == n {
+				break
+			}
+			switch bits {
+			case 16:
+				total += int64(int32(int16(s)))
+			default:
+				total += int64(int32(s))
+			}
+		}
+		if n != chunkSize {
+			break
+		}
+	}
+	if err == nil {
+		err = d.Err()
+	}
+
+	return total, err
 }

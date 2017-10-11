@@ -325,7 +325,7 @@ func (d *Decoder) readHeaders() error {
 			d.AvgBytesPerSec = d.parser.AvgBytesPerSec
 
 			if rewindBytes > 0 {
-				d.r.Seek(-(rewindBytes + int64(chunk.Size)), 1)
+				d.r.Seek(-(rewindBytes + int64(chunk.Size) + 8), 1)
 			}
 			break
 		} else {
