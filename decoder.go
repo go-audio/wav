@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/go-audio/audio"
@@ -328,8 +329,10 @@ func (d *Decoder) readHeaders() error {
 			}
 			break
 		} else {
-			// unexpected chunk order
-			rewindBytes += int64(chunk.Size)
+			// unexpected chunk order, might be a bext chunk
+			rewindBytes += int64(chunk.Size) + 8
+			// drain the chunk
+			io.CopyN(ioutil.Discard, d.r, int64(chunk.Size))
 		}
 
 	}

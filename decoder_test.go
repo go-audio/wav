@@ -47,6 +47,7 @@ func TestDecoder_IsValidFile(t *testing.T) {
 		{"fixtures/dirty-kick-24b441k.wav", true},
 		{"fixtures/sample.avi", false},
 		{"fixtures/bloop.aif", false},
+		{"fixtures/bwf.wav", true},
 	}
 
 	for _, tc := range testCases {
