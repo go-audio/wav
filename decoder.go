@@ -1,10 +1,12 @@
 package wav
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/go-audio/audio"
@@ -184,11 +186,10 @@ func (d *Decoder) FullPCMBuffer() (*audio.IntBuffer, error) {
 
 	i := 0
 	for err == nil {
-		_, err = d.PCMChunk.Read(sampleBufData)
+		buf.Data[i], err = decodeF(d.PCMChunk, sampleBufData)
 		if err != nil {
 			break
 		}
-		buf.Data[i] = decodeF(sampleBufData)
 		i++
 		// grow the underlying slice if needed
 		if i == len(buf.Data) {
@@ -217,27 +218,56 @@ func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) (n int, err error) {
 		}
 	}
 
-	bytesPerSample := (d.BitDepth-1)/8 + 1
-	sampleBufData := make([]byte, bytesPerSample)
+	format := &audio.Format{
+		NumChannels: int(d.NumChans),
+		SampleRate:  int(d.SampleRate),
+	}
+
+	buf.SourceBitDepth = int(d.BitDepth)
 	decodeF, err := sampleDecodeFunc(int(d.BitDepth))
 	if err != nil {
 		return 0, fmt.Errorf("could not get sample decode func %v", err)
 	}
 
+	bPerSample := bytesPerSample(int(d.BitDepth))
+	// populate a file buffer to avoid multiple very small reads
+	// we need to cap the buffer size to not be bigger than the pcm chunk.
+	size := len(buf.Data) * bPerSample
+	tmpBuf := make([]byte, size)
+	var m int
+	m, err = d.PCMChunk.R.Read(tmpBuf)
+	if err != nil {
+		if err == io.EOF {
+			return m, nil
+		}
+		return m, err
+	}
+	if m == 0 {
+		return m, nil
+	}
+	bufR := bytes.NewReader(tmpBuf[:m])
+	sampleBuf := make([]byte, bPerSample, bPerSample)
+	var misaligned bool
+	if m%bPerSample > 0 {
+		misaligned = true
+	}
+
 	// Note that we populate the buffer even if the
 	// size of the buffer doesn't fit an even number of frames.
 	for n = 0; n < len(buf.Data); n++ {
-		_, err = d.PCMChunk.Read(sampleBufData)
+		buf.Data[n], err = decodeF(bufR, sampleBuf)
 		if err != nil {
+			// the last sample isn't a full sample but just padding.
+			if misaligned {
+				n--
+			}
 			break
 		}
-		buf.Data[n] = decodeF(sampleBufData)
 	}
+	buf.Format = format
 	if err == io.EOF {
 		err = nil
 	}
-	buf.Format = d.Format()
-	buf.SourceBitDepth = int(d.BitDepth)
 
 	return n, err
 }
@@ -329,12 +359,14 @@ func (d *Decoder) readHeaders() error {
 			d.AvgBytesPerSec = d.parser.AvgBytesPerSec
 
 			if rewindBytes > 0 {
-				d.r.Seek(-(rewindBytes + int64(chunk.Size)), 1)
+				d.r.Seek(-(rewindBytes + int64(chunk.Size) + 8), 1)
 			}
 			break
 		} else {
-			// unexpected chunk order
-			rewindBytes += int64(chunk.Size)
+			// unexpected chunk order, might be a bext chunk
+			rewindBytes += int64(chunk.Size) + 8
+			// drain the chunk
+			io.CopyN(ioutil.Discard, d.r, int64(chunk.Size))
 		}
 
 	}
@@ -342,30 +374,40 @@ func (d *Decoder) readHeaders() error {
 	return d.err
 }
 
+func bytesPerSample(bitDepth int) int {
+	return bitDepth / 8
+}
+
 // sampleDecodeFunc returns a function that can be used to convert
 // a byte range into an int value based on the amount of bits used per sample.
 // Note that 8bit samples are unsigned, all other values are signed.
-func sampleDecodeFunc(bitsPerSample int) (func([]byte) int, error) {
+func sampleDecodeFunc(bitsPerSample int) (func(io.Reader, []byte) (int, error), error) {
 	// NOTE: WAV PCM data is stored using little-endian
 	switch bitsPerSample {
 	case 8:
 		// 8bit values are unsigned
-		return func(s []byte) int {
-			return int(uint8(s[0]))
+		return func(r io.Reader, buf []byte) (int, error) {
+			_, err := r.Read(buf[:1])
+			return int(buf[0]), err
 		}, nil
 	case 16:
-		// -32,768	(0x7FFF) to	32,767	(0x8000)
-		return func(s []byte) int {
-			return int(int16(binary.LittleEndian.Uint16(s)))
+		return func(r io.Reader, buf []byte) (int, error) {
+			_, err := r.Read(buf[:2])
+			return int(int16(binary.LittleEndian.Uint16(buf[:2]))), err
 		}, nil
 	case 24:
 		// -34,359,738,367 (0x7FFFFF) to 34,359,738,368	(0x800000)
-		return func(s []byte) int {
-			return int(audio.Int24LETo32(s))
+		return func(r io.Reader, buf []byte) (int, error) {
+			_, err := r.Read(buf[:3])
+			if err != nil {
+				return 0, err
+			}
+			return int(audio.Int24LETo32(buf[:3])), nil
 		}, nil
 	case 32:
-		return func(s []byte) int {
-			return int(s[0]) + int(s[1])<<8 + int(s[2])<<16 + int(s[3])<<24
+		return func(r io.Reader, buf []byte) (int, error) {
+			_, err := r.Read(buf[:4])
+			return int(int32(binary.LittleEndian.Uint32(buf[:4]))), err
 		}, nil
 	default:
 		return nil, fmt.Errorf("unhandled byte depth:%d", bitsPerSample)
