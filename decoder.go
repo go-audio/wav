@@ -41,6 +41,11 @@ func NewDecoder(r io.ReadSeeker) *Decoder {
 	}
 }
 
+// Seek provides access to the curosr position in the PCM data
+func (d *Decoder) Seek(offset int64, whence int) (int64, error) {
+	return d.r.Seek(offset, whence)
+}
+
 // SampleBitDepth returns the bit depth encoding of each sample.
 func (d *Decoder) SampleBitDepth() int32 {
 	if d == nil {
