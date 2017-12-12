@@ -142,21 +142,6 @@ func (d *Decoder) ReadMetadata() {
 
 }
 
-// Reset resets the decoder (and rewind the underlying reader)
-func (d *Decoder) Reset() {
-	d.err = nil
-	d.pcmDataAccessed = false
-	d.NumChans = 0
-	d.BitDepth = 0
-	d.SampleRate = 0
-	d.AvgBytesPerSec = 0
-	d.WavAudioFormat = 0
-	d.PCMSize = 0
-	d.r.Seek(0, 0)
-	d.PCMChunk = nil
-	d.parser = riff.New(d.r)
-}
-
 // FwdToPCM forwards the underlying reader until the start of the PCM chunk.
 // If the PCM chunk was already read, no data will be found (you need to rewind).
 func (d *Decoder) FwdToPCM() error {
