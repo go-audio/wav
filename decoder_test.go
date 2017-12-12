@@ -152,6 +152,65 @@ func TestDecoder_Attributes(t *testing.T) {
 	}
 }
 
+func TestDecoder_ReadMetadata(t *testing.T) {
+	testCases := []struct {
+		in       string
+		artist   string
+		title    string
+		album    string
+		track    string
+		year     string
+		genre    string
+		comments string
+	}{
+		{in: "fixtures/listinfo.wav",
+			artist: "artist", title: "track title", album: "album title",
+			track: "42", year: "2017", genre: "genre", comments: "my comment",
+		},
+		{in: "fixtures/kick.wav"},
+	}
+
+	for _, tc := range testCases {
+		f, err := os.Open(tc.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		d := wav.NewDecoder(f)
+		d.ReadMetadata()
+		if d.Err() != nil {
+			t.Fatal(err)
+		}
+		metadata := d.Metadata
+		if metadata == nil && tc.artist != "" {
+			t.Fatalf("Expected the metadata to be set")
+		}
+		if metadata != nil {
+			if metadata.Artist != tc.artist {
+				t.Errorf("Expected artist or be %+v but was %+v", tc.artist, metadata.Artist)
+			}
+			if metadata.Title != tc.title {
+				t.Errorf("Expected title or be %+v but was %+v", tc.title, metadata.Title)
+			}
+			if metadata.Product != tc.album {
+				t.Errorf("Expected album or be %+v but was %+v", tc.album, metadata.Product)
+			}
+			if metadata.TrackNbr != tc.track {
+				t.Errorf("Expected track or be %+v but was %+v", tc.track, metadata.TrackNbr)
+			}
+			if metadata.CreationDate != tc.year {
+				t.Errorf("Expected year or be %+v but was %+v", tc.year, metadata.CreationDate)
+			}
+			if metadata.Genre != tc.genre {
+				t.Errorf("Expected genre or be %+v but was %+v", tc.genre, metadata.Genre)
+			}
+			if metadata.Comments != tc.comments {
+				t.Errorf("Expected comments or be %+v but was %+v", tc.comments, metadata.Comments)
+			}
+		}
+		f.Close()
+	}
+}
+
 func TestDecoder_PCMBuffer(t *testing.T) {
 	testCases := []struct {
 		input            string

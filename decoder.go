@@ -13,6 +13,10 @@ import (
 	"github.com/mattetti/audio/riff"
 )
 
+var (
+	CIDList = [4]byte{'L', 'I', 'S', 'T'}
+)
+
 // Decoder handles the decoding of wav files.
 type Decoder struct {
 	r      io.ReadSeeker
@@ -30,6 +34,8 @@ type Decoder struct {
 	pcmDataAccessed bool
 	// pcmChunk is available so we can use the LimitReader
 	PCMChunk *riff.Chunk
+	// Metadata for the current file
+	Metadata *Metadata
 }
 
 // NewDecoder creates a decoder for the passed wav reader.
@@ -103,6 +109,39 @@ func (d *Decoder) ReadInfo() {
 	d.err = d.readHeaders()
 }
 
+// ReadMetadata parses the file for extra metadata such as the INFO list chunk.
+// Because the chunk might be located at the end of the file, the entire file will be read
+// and should be rewinded if more data must be accessed.
+func (d *Decoder) ReadMetadata() {
+	if d.Metadata != nil {
+		return
+	}
+	d.ReadInfo()
+	if d.Err() != nil || d.Metadata != nil {
+		return
+	}
+	var (
+		chunk *riff.Chunk
+		err   error
+	)
+	for err == nil {
+		chunk, err = d.parser.NextChunk()
+		if err != nil {
+			break
+		}
+
+		if chunk.ID == CIDList {
+			if err = DecodeListChunk(d, chunk); err != nil {
+				if err != io.EOF {
+					d.err = err
+				}
+			}
+			break
+		}
+	}
+
+}
+
 // Reset resets the decoder (and rewind the underlying reader)
 func (d *Decoder) Reset() {
 	d.err = nil
@@ -138,6 +177,10 @@ func (d *Decoder) FwdToPCM() error {
 		if chunk.ID == riff.DataFormatID {
 			d.PCMSize = chunk.Size
 			d.PCMChunk = chunk
+			break
+		}
+		if chunk.ID == CIDList {
+			DecodeListChunk(d, chunk)
 			break
 		}
 		chunk.Drain()
@@ -362,13 +405,19 @@ func (d *Decoder) readHeaders() error {
 				d.r.Seek(-(rewindBytes + int64(chunk.Size) + 8), 1)
 			}
 			break
+		} else if chunk.ID == CIDList {
+			// The list chunk can be in the header or footer
+			// because so many players don't support that chunk properly
+			// it is recommended to have it at the end of the file.
+			DecodeListChunk(d, chunk)
+			// unexpected chunk order, might be a bext chunk
+			rewindBytes += int64(chunk.Size) + 8
 		} else {
 			// unexpected chunk order, might be a bext chunk
 			rewindBytes += int64(chunk.Size) + 8
 			// drain the chunk
 			io.CopyN(ioutil.Discard, d.r, int64(chunk.Size))
 		}
-
 	}
 
 	return d.err
