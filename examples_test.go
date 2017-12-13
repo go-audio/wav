@@ -85,3 +85,19 @@ func ExampleEncoder_Write() {
 	// Old file -> Format: WAVE - 1 channels @ 22050 / 16 bits - Duration: 0.204172 seconds
 	// New file -> Format: WAVE - 1 channels @ 22050 / 16 bits - Duration: 0.204172 seconds
 }
+
+func ExampleDecoder_ReadMetadata() {
+	f, err := os.Open("fixtures/listinfo.wav")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	d := wav.NewDecoder(f)
+	d.ReadMetadata()
+	if d.Err() != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%#v\n", d.Metadata)
+	// Output:
+	// &wav.Metadata{SamplerInfo:(*wav.SamplerInfo)(nil), Artist:"artist", Comments:"my comment", Copyright:"", CreationDate:"2017", Engineer:"", Technician:"", Genre:"genre", Keywords:"", Medium:"", Title:"track title", Product:"album title", Subject:"", Software:"", Source:"", Location:"", TrackNbr:"42"}
+}
