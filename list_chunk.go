@@ -22,7 +22,6 @@ var (
 	markerISRC    = [4]byte{'I', 'S', 'R', 'C'}
 	markerISBJ    = [4]byte{'I', 'S', 'B', 'J'}
 	markerICMT    = [4]byte{'I', 'C', 'M', 'T'}
-	markerIAUT    = [4]byte{'I', 'A', 'U', 'T'}
 	markerITRK    = [4]byte{'I', 'T', 'R', 'K'}
 	markerITRKBug = [4]byte{'i', 't', 'r', 'k'}
 	markerITCH    = [4]byte{'I', 'T', 'C', 'H'}
@@ -51,7 +50,7 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 		if _, err = r.Read(scratch); err != nil {
 			return fmt.Errorf("failed to read the INFO subchunk - %v", err)
 		}
-		if !bytes.Equal(scratch, []byte{'I', 'N', 'F', 'O'}) {
+		if !bytes.Equal(scratch, CIDInfo[:]) {
 			return fmt.Errorf("expected an INFO subchunk but got %+v", scratch)
 		}
 		if d.Metadata == nil {
@@ -67,10 +66,7 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 			if err := binary.Read(r, binary.BigEndian, &id); err != nil {
 				return err
 			}
-			if err := binary.Read(r, binary.LittleEndian, &size); err != err {
-				return err
-			}
-			return nil
+			return binary.Read(r, binary.LittleEndian, &size)
 		}
 
 		for err == nil {
@@ -118,4 +114,67 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 	}
 	ch.Drain()
 	return nil
+}
+
+func encodeInfoChunk(e *Encoder) []byte {
+	if e == nil || e.Metadata == nil {
+		return nil
+	}
+	buf := bytes.NewBuffer(nil)
+
+	writeSection := func(id [4]byte, val string) {
+		buf.Write(id[:])
+		binary.Write(buf, binary.LittleEndian, uint32(len(val)+1))
+		buf.Write(append([]byte(val), 0x00))
+	}
+	if e.Metadata.Artist != "" {
+		writeSection(markerIART, e.Metadata.Artist)
+	}
+	if e.Metadata.Comments != "" {
+		writeSection(markerICMT, e.Metadata.Comments)
+	}
+	if e.Metadata.Copyright != "" {
+		writeSection(markerICOP, e.Metadata.Copyright)
+	}
+	if e.Metadata.CreationDate != "" {
+		writeSection(markerICRD, e.Metadata.CreationDate)
+	}
+	if e.Metadata.Engineer != "" {
+		writeSection(markerIENG, e.Metadata.Engineer)
+	}
+	if e.Metadata.Technician != "" {
+		writeSection(markerITCH, e.Metadata.Technician)
+	}
+	if e.Metadata.Genre != "" {
+		writeSection(markerIGNR, e.Metadata.Genre)
+	}
+	if e.Metadata.Keywords != "" {
+		writeSection(markerIKEY, e.Metadata.Keywords)
+	}
+	if e.Metadata.Medium != "" {
+		writeSection(markerIMED, e.Metadata.Medium)
+	}
+	if e.Metadata.Title != "" {
+		writeSection(markerINAM, e.Metadata.Title)
+	}
+	if e.Metadata.Product != "" {
+		writeSection(markerIPRD, e.Metadata.Product)
+	}
+	if e.Metadata.Subject != "" {
+		writeSection(markerISBJ, e.Metadata.Subject)
+	}
+	if e.Metadata.Software != "" {
+		writeSection(markerISFT, e.Metadata.Software)
+	}
+	if e.Metadata.Source != "" {
+		writeSection(markerISRC, e.Metadata.Source)
+	}
+	if e.Metadata.Location != "" {
+		writeSection(markerIARL, e.Metadata.Location)
+	}
+	if e.Metadata.TrackNbr != "" {
+		writeSection(markerITRK, e.Metadata.TrackNbr)
+	}
+
+	return append(CIDInfo, buf.Bytes()...)
 }

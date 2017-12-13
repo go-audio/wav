@@ -19,11 +19,15 @@ type Encoder struct {
 	BitDepth   int
 	NumChans   int
 
-	// A number indicating the WAVE format category of the file. The content of the
-	// <format-specific-fields> portion of the ‘fmt’ chunk, and the interpretation of
-	// the waveform data, depend on this value.
-	// PCM = 1 (i.e. Linear quantization) Values other than 1 indicate some form of compression.
+	// A number indicating the WAVE format category of the file. The content of
+	// the <format-specific-fields> portion of the ‘fmt’ chunk, and the
+	// interpretation of the waveform data, depend on this value. PCM = 1 (i.e.
+	// Linear quantization) Values other than 1 indicate some form of
+	// compression.
 	WavAudioFormat int
+
+	// Metadata contains metadata to inject in the file.
+	Metadata *Metadata
 
 	WrittenBytes    int
 	frames          int
@@ -184,11 +188,30 @@ func (e *Encoder) Write(buf *audio.IntBuffer) error {
 	return e.addBuffer(buf)
 }
 
+func (e *Encoder) writeMetadata() error {
+	chunkData := encodeInfoChunk(e)
+	if err := e.AddBE(CIDList); err != nil {
+		return fmt.Errorf("failed to write the LIST chunk ID", err)
+	}
+	if err := e.AddLE(uint32(len(chunkData))); err != nil {
+		return fmt.Errorf("failed to write the LIST chunk soize", err)
+	}
+	return e.AddBE(chunkData)
+}
+
 // Close flushes the content to disk, make sure the headers are up to date
-// Note that the underlying writter is NOT being closed.
+// Note that the underlying writer is NOT being closed.
 func (e *Encoder) Close() error {
 	if e == nil || e.w == nil {
 		return nil
+	}
+
+	// inject metadata at the end to not trip implementation not supporting
+	// metadata chunks
+	if e.Metadata != nil {
+		if err := e.writeMetadata(); err != nil {
+			return fmt.Errorf("failed to write metadata - %v", err)
+		}
 	}
 
 	// go back and write total size in header

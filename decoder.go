@@ -14,7 +14,10 @@ import (
 )
 
 var (
+	// CIDList is the chunk ID for a LIST chunk
 	CIDList = [4]byte{'L', 'I', 'S', 'T'}
+	// CIDINFO is the chunk ID for an INFO chunk
+	CIDInfo = []byte{'I', 'N', 'F', 'O'}
 )
 
 // Decoder handles the decoding of wav files.
