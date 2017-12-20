@@ -211,6 +211,21 @@ func TestDecoder_ReadMetadata(t *testing.T) {
 	}
 }
 
+func TestDecoderMisalignedInstChunk(t *testing.T) {
+	f, err := os.Open("fixtures/misaligned-chunk.wav")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	d := wav.NewDecoder(f)
+	intBuf := make([]int, 255)
+	buf := &audio.IntBuffer{Data: intBuf}
+	if _, err := d.PCMBuffer(buf); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDecoder_PCMBuffer(t *testing.T) {
 	testCases := []struct {
 		input            string

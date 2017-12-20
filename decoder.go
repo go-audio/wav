@@ -332,6 +332,17 @@ func (d *Decoder) NextChunk() (*riff.Chunk, error) {
 		return nil, d.err
 	}
 
+	// TODO: any reason we don't use d.parser.NextChunk (riff.NextChunk) here?
+	// It correctly handles the misaligned chunk.
+
+	// TODO: copied over from riff.parser.NextChunk
+	// all RIFF chunks (including WAVE "data" chunks) must be word aligned.
+	// If the data uses an odd number of bytes, a padding byte with a value of zero must be placed at the end of the sample data.
+	// The "data" chunk header's size should not include this byte.
+	if size%2 == 1 {
+		size++
+	}
+
 	c := &riff.Chunk{
 		ID:   id,
 		Size: int(size),
