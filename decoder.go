@@ -169,7 +169,6 @@ func (d *Decoder) FwdToPCM() error {
 		}
 		if chunk.ID == CIDList {
 			DecodeListChunk(d, chunk)
-			break
 		}
 		chunk.Drain()
 	}
@@ -247,6 +246,9 @@ func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) (n int, err error) {
 		if err != nil {
 			return 0, d.err
 		}
+	}
+	if d.PCMChunk == nil {
+		return 0, ErrPCMChunkNotFound
 	}
 
 	format := &audio.Format{

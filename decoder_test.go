@@ -252,6 +252,12 @@ func TestDecoder_PCMBuffer(t *testing.T) {
 			nil,
 			3713,
 		},
+		{"fixtures/listChunkInHeader.wav",
+			"LIST chunk before the PCM data",
+			24,
+			nil,
+			30636,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -271,13 +277,13 @@ func TestDecoder_PCMBuffer(t *testing.T) {
 			var n int
 			for err == nil {
 				n, err = d.PCMBuffer(buf)
+				if err != nil {
+					t.Fatal(err)
+				}
 				if n == 0 {
 					break
 				}
 				samplesAvailable += n
-				if err != nil {
-					t.Fatal(err)
-				}
 				samples = append(samples, buf.Data...)
 			}
 			if samplesAvailable != tc.samplesAvailable {
