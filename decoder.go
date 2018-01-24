@@ -152,6 +152,9 @@ func (d *Decoder) ReadMetadata() {
 					d.err = err
 				}
 			}
+		default:
+			// fmt.Println(string(chunk.ID[:]))
+			chunk.Drain()
 		}
 	}
 
@@ -424,6 +427,9 @@ func (d *Decoder) readHeaders() error {
 			// it is recommended to have it at the end of the file.
 			DecodeListChunk(d, chunk)
 			// unexpected chunk order, might be a bext chunk
+			rewindBytes += int64(chunk.Size) + 8
+		} else if chunk.ID == CIDSmpl {
+			DecodeSamplerChunk(d, chunk)
 			rewindBytes += int64(chunk.Size) + 8
 		} else {
 			// unexpected chunk order, might be a bext chunk

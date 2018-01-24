@@ -51,7 +51,10 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 			return fmt.Errorf("failed to read the INFO subchunk - %v", err)
 		}
 		if !bytes.Equal(scratch, CIDInfo[:]) {
-			return fmt.Errorf("expected an INFO subchunk but got %+v", scratch)
+			// "expected an INFO subchunk but got %s", string(scratch)
+			// TODO: support adtl subchunks
+			ch.Drain()
+			return nil
 		}
 		if d.Metadata == nil {
 			d.Metadata = &Metadata{}

@@ -44,22 +44,22 @@ func DecodeSamplerChunk(d *Decoder, ch *riff.Chunk) error {
 		}
 		copy(d.Metadata.SamplerInfo.Product[:], scratch[:4])
 
-		if err := binary.Read(r, binary.BigEndian, &d.Metadata.SamplerInfo.SamplePeriod); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &d.Metadata.SamplerInfo.SamplePeriod); err != nil {
 			return err
 		}
-		if err := binary.Read(r, binary.BigEndian, &d.Metadata.SamplerInfo.MIDIUnityNote); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &d.Metadata.SamplerInfo.MIDIUnityNote); err != nil {
 			return err
 		}
-		if err := binary.Read(r, binary.BigEndian, &d.Metadata.SamplerInfo.MIDIPitchFraction); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &d.Metadata.SamplerInfo.MIDIPitchFraction); err != nil {
 			return err
 		}
-		if err := binary.Read(r, binary.BigEndian, &d.Metadata.SamplerInfo.SMPTEFormat); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &d.Metadata.SamplerInfo.SMPTEFormat); err != nil {
 			return err
 		}
-		if err := binary.Read(r, binary.BigEndian, &d.Metadata.SamplerInfo.SMPTEOffset); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &d.Metadata.SamplerInfo.SMPTEOffset); err != nil {
 			return err
 		}
-		if err := binary.Read(r, binary.BigEndian, &d.Metadata.SamplerInfo.NumSampleLoops); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &d.Metadata.SamplerInfo.NumSampleLoops); err != nil {
 			return err
 		}
 		var remaining uint32

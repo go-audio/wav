@@ -76,7 +76,6 @@ func TestEncoderRoundTrip(t *testing.T) {
 			if nd.Metadata == nil {
 				t.Errorf("expected some metadata, got a nil value")
 			}
-			t.Logf("%#v\n", nd.Metadata)
 			if tc.metadata.Artist != nd.Metadata.Artist {
 				t.Errorf("expected Artist to be %s, but was %s", tc.metadata.Artist, nd.Metadata.Artist)
 			}
