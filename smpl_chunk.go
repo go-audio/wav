@@ -67,7 +67,7 @@ func DecodeSamplerChunk(d *Decoder, ch *riff.Chunk) error {
 		if err := binary.Read(r, binary.BigEndian, &remaining); err != nil {
 			return err
 		}
-		if remaining > 0 {
+		if d.Metadata.SamplerInfo.NumSampleLoops > 0 {
 			d.Metadata.SamplerInfo.Loops = []*SampleLoop{}
 			for i := uint32(0); i < d.Metadata.SamplerInfo.NumSampleLoops; i++ {
 				sl := &SampleLoop{}
@@ -75,19 +75,19 @@ func DecodeSamplerChunk(d *Decoder, ch *riff.Chunk) error {
 					return fmt.Errorf("failed to read the sample loop cue point id")
 				}
 				copy(sl.CuePointID[:], scratch[:4])
-				if err := binary.Read(r, binary.BigEndian, &sl.Type); err != nil {
+				if err := binary.Read(r, binary.LittleEndian, &sl.Type); err != nil {
 					return err
 				}
-				if err := binary.Read(r, binary.BigEndian, &sl.Start); err != nil {
+				if err := binary.Read(r, binary.LittleEndian, &sl.Start); err != nil {
 					return err
 				}
-				if err := binary.Read(r, binary.BigEndian, &sl.End); err != nil {
+				if err := binary.Read(r, binary.LittleEndian, &sl.End); err != nil {
 					return err
 				}
-				if err := binary.Read(r, binary.BigEndian, &sl.Fraction); err != nil {
+				if err := binary.Read(r, binary.LittleEndian, &sl.Fraction); err != nil {
 					return err
 				}
-				if err := binary.Read(r, binary.BigEndian, &sl.PlayCount); err != nil {
+				if err := binary.Read(r, binary.LittleEndian, &sl.PlayCount); err != nil {
 					return err
 				}
 

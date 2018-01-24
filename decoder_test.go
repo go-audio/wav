@@ -166,8 +166,11 @@ func TestDecoder_ReadMetadata(t *testing.T) {
 		},
 		{in: "fixtures/kick.wav"},
 		{in: "fixtures/flloop.wav", metadata: &wav.Metadata{
-			Software:    "FL Studio (beta)",
-			SamplerInfo: &wav.SamplerInfo{SamplePeriod: 22676, MIDIUnityNote: 60, NumSampleLoops: 1},
+			Software: "FL Studio (beta)",
+			SamplerInfo: &wav.SamplerInfo{SamplePeriod: 22676, MIDIUnityNote: 60, NumSampleLoops: 1,
+				Loops: []*wav.SampleLoop{
+					{CuePointID: [4]byte{0, 0, 2, 0}, Type: 1024, Start: 0, End: 107999, Fraction: 0, PlayCount: 0},
+				}},
 		}},
 	}
 
