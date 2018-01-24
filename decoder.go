@@ -16,6 +16,8 @@ import (
 var (
 	// CIDList is the chunk ID for a LIST chunk
 	CIDList = [4]byte{'L', 'I', 'S', 'T'}
+	// CIDSmpl is the chunk ID for a smpl chunk
+	CIDSmpl = [4]byte{'s', 'm', 'p', 'l'}
 	// CIDINFO is the chunk ID for an INFO chunk
 	CIDInfo = []byte{'I', 'N', 'F', 'O'}
 )
@@ -113,8 +115,8 @@ func (d *Decoder) ReadInfo() {
 }
 
 // ReadMetadata parses the file for extra metadata such as the INFO list chunk.
-// Because the chunk might be located at the end of the file, the entire file will be read
-// and should be rewinded if more data must be accessed.
+// The entire file will be read and should be rewinded if more data must be
+// accessed.
 func (d *Decoder) ReadMetadata() {
 	if d.Metadata != nil {
 		return
@@ -133,13 +135,23 @@ func (d *Decoder) ReadMetadata() {
 			break
 		}
 
-		if chunk.ID == CIDList {
+		switch chunk.ID {
+		case CIDList:
 			if err = DecodeListChunk(d, chunk); err != nil {
 				if err != io.EOF {
 					d.err = err
 				}
 			}
-			break
+			if d.Metadata != nil && d.Metadata.SamplerInfo != nil {
+				// we got everything we were looking for
+				break
+			}
+		case CIDSmpl:
+			if err = DecodeSamplerChunk(d, chunk); err != nil {
+				if err != io.EOF {
+					d.err = err
+				}
+			}
 		}
 	}
 
