@@ -70,7 +70,6 @@ func DecodeCueChunk(d *Decoder, ch *riff.Chunk) error {
 			return fmt.Errorf("failed to read the number of cues - %v", err)
 		}
 		if nbrCues > 0 {
-			fmt.Println("nbrCues", nbrCues)
 			if d.Metadata == nil {
 				d.Metadata = &Metadata{}
 			}
