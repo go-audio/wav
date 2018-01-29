@@ -48,6 +48,8 @@ type Metadata struct {
 	Location string
 	// TrackNbr is the track number
 	TrackNbr string
+	// CuePoints is a list of cue points in the wav file.
+	CuePoints []*CuePoint
 }
 
 // SamplerInfo is extra metadata pertinent to a sampler type usage.

@@ -20,6 +20,8 @@ var (
 	CIDSmpl = [4]byte{'s', 'm', 'p', 'l'}
 	// CIDINFO is the chunk ID for an INFO chunk
 	CIDInfo = []byte{'I', 'N', 'F', 'O'}
+	// CIDCue is the chunk ID for the cue chunk
+	CIDCue = [4]byte{'c', 'u', 'e', 0x20}
 )
 
 // Decoder handles the decoding of wav files.
@@ -148,6 +150,12 @@ func (d *Decoder) ReadMetadata() {
 			}
 		case CIDSmpl:
 			if err = DecodeSamplerChunk(d, chunk); err != nil {
+				if err != io.EOF {
+					d.err = err
+				}
+			}
+		case CIDCue:
+			if err = DecodeCueChunk(d, chunk); err != nil {
 				if err != io.EOF {
 					d.err = err
 				}

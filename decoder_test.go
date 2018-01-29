@@ -3,7 +3,6 @@ package wav_test
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
@@ -150,54 +149,6 @@ func TestDecoder_Attributes(t *testing.T) {
 		if int(d.BitDepth) != tc.bitDepth {
 			t.Fatalf("expected info to have %d bits per sample but it has %d", tc.bitDepth, d.BitDepth)
 		}
-	}
-}
-
-func TestDecoder_ReadMetadata(t *testing.T) {
-	testCases := []struct {
-		in       string
-		metadata *wav.Metadata
-	}{
-		{in: "fixtures/listinfo.wav",
-			metadata: &wav.Metadata{
-				Artist: "artist", Title: "track title", Product: "album title",
-				TrackNbr: "42", CreationDate: "2017", Genre: "genre", Comments: "my comment",
-			},
-		},
-		{in: "fixtures/kick.wav"},
-		{in: "fixtures/flloop.wav", metadata: &wav.Metadata{
-			Software: "FL Studio (beta)",
-			SamplerInfo: &wav.SamplerInfo{SamplePeriod: 22676, MIDIUnityNote: 60, NumSampleLoops: 1,
-				Loops: []*wav.SampleLoop{
-					{CuePointID: [4]byte{0, 0, 2, 0}, Type: 1024, Start: 0, End: 107999, Fraction: 0, PlayCount: 0},
-				}},
-		}},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.in, func(t *testing.T) {
-			f, err := os.Open(tc.in)
-			if err != nil {
-				t.Fatal(err)
-			}
-			d := wav.NewDecoder(f)
-			d.ReadMetadata()
-			if err = d.Err(); err != nil {
-				t.Fatal(err)
-			}
-			if tc.metadata != nil {
-				if tc.metadata.SamplerInfo != nil {
-					if !reflect.DeepEqual(tc.metadata.SamplerInfo, d.Metadata.SamplerInfo) {
-						t.Fatalf("Expected sampler info\n%#v to equal\n%#v\n", d.Metadata.SamplerInfo, tc.metadata.SamplerInfo)
-					}
-				}
-
-				if !reflect.DeepEqual(tc.metadata, d.Metadata) {
-					t.Fatalf("Expected\n%#v\n to equal\n%#v\n", d.Metadata, tc.metadata)
-				}
-			}
-			f.Close()
-		})
 	}
 }
 
