@@ -54,7 +54,7 @@ func NewDecoder(r io.ReadSeeker) *Decoder {
 	}
 }
 
-// Seek provides access to the curosr position in the PCM data
+// Seek provides access to the cursor position in the PCM data
 func (d *Decoder) Seek(offset int64, whence int) (int64, error) {
 	return d.r.Seek(offset, whence)
 }
