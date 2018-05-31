@@ -3,6 +3,7 @@ package wav
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -33,6 +34,7 @@ type Encoder struct {
 	frames          int
 	pcmChunkStarted bool
 	pcmChunkSizePos int
+	wroteHeader     bool // true if we've written the header out
 }
 
 // NewEncoder creates a new encoder to create a new wav file.
@@ -104,6 +106,10 @@ func (e *Encoder) addBuffer(buf *audio.IntBuffer) error {
 }
 
 func (e *Encoder) writeHeader() error {
+	if e.wroteHeader {
+		return errors.New("already wrote header")
+	}
+	e.wroteHeader = true
 	if e == nil {
 		return fmt.Errorf("can't write a nil encoder")
 	}
@@ -167,8 +173,10 @@ func (e *Encoder) writeHeader() error {
 // Write encodes and writes the passed buffer to the underlying writer.
 // Don't forger to Close() the encoder or the file won't be valid.
 func (e *Encoder) Write(buf *audio.IntBuffer) error {
-	if err := e.writeHeader(); err != nil {
-		return err
+	if !e.wroteHeader {
+		if err := e.writeHeader(); err != nil {
+			return err
+		}
 	}
 
 	if !e.pcmChunkStarted {
@@ -188,13 +196,36 @@ func (e *Encoder) Write(buf *audio.IntBuffer) error {
 	return e.addBuffer(buf)
 }
 
+// WriteFrame writes a single frame of data to the underlying writer.
+func (e *Encoder) WriteFrame(value interface{}) error {
+	if !e.wroteHeader {
+		e.writeHeader()
+	}
+	if !e.pcmChunkStarted {
+		// sound header
+		if err := e.AddLE(riff.DataFormatID); err != nil {
+			return fmt.Errorf("error encoding sound header %v", err)
+		}
+		e.pcmChunkStarted = true
+
+		// write a temporary chunksize
+		e.pcmChunkSizePos = e.WrittenBytes
+		if err := e.AddLE(uint32(42)); err != nil {
+			return fmt.Errorf("%v when writing wav data chunk size header", err)
+		}
+	}
+
+	e.frames++
+	return e.AddLE(value)
+}
+
 func (e *Encoder) writeMetadata() error {
 	chunkData := encodeInfoChunk(e)
 	if err := e.AddBE(CIDList); err != nil {
-		return fmt.Errorf("failed to write the LIST chunk ID", err)
+		return fmt.Errorf("failed to write the LIST chunk ID: %s", err)
 	}
 	if err := e.AddLE(uint32(len(chunkData))); err != nil {
-		return fmt.Errorf("failed to write the LIST chunk soize", err)
+		return fmt.Errorf("failed to write the LIST chunk size: %s", err)
 	}
 	return e.AddBE(chunkData)
 }
