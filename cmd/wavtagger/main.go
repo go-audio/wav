@@ -9,14 +9,16 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-audio/wav"
 )
 
 var (
-	flagFileToTag = flag.String("file", "", "Path to the wave file to tag")
-	flagDirToTag  = flag.String("dir", "", "Directory containing all the wav files to tag")
+	flagFileToTag   = flag.String("file", "", "Path to the wave file to tag")
+	flagDirToTag    = flag.String("dir", "", "Directory containing all the wav files to tag")
+	flagTitleRegexp = flag.String("regexp", "", `submatch regexp to use to set the title dynamically by extracting it from the filename (ignoring the extension), example: 'my_files_\d\d_(.*)'`)
 	//
 	flagTitle     = flag.String("title", "", "File's title")
 	flagArtist    = flag.String("artist", "", "File's artist")
@@ -88,9 +90,21 @@ func tagFile(path string) error {
 	if *flagArtist != "" {
 		e.Metadata.Artist = *flagArtist
 	}
+	if *flagTitleRegexp != "" {
+		filename := filepath.Base(path)
+		filename = filename[:len(filename)-len(filepath.Ext(path))]
+		re := regexp.MustCompile(*flagTitleRegexp)
+		matches := re.FindStringSubmatch(filename)
+		if len(matches) > 0 {
+			e.Metadata.Title = matches[1]
+		} else {
+			fmt.Printf("No matches for title regexp %s in %s\n", *flagTitleRegexp, filename)
+		}
+	}
 	if *flagTitle != "" {
 		e.Metadata.Title = *flagTitle
 	}
+
 	if *flagComments != "" {
 		e.Metadata.Comments = *flagComments
 	}
