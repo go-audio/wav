@@ -1,3 +1,4 @@
+// This tool reads metadata from the passed wav file if available.
 package main
 
 import (
