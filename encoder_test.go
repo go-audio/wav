@@ -1,10 +1,8 @@
-package wav_test
+package wav
 
 import (
 	"os"
 	"testing"
-
-	"github.com/go-audio/wav"
 )
 
 func TestEncoderRoundTrip(t *testing.T) {
@@ -12,13 +10,13 @@ func TestEncoderRoundTrip(t *testing.T) {
 	testCases := []struct {
 		in       string
 		out      string
-		metadata *wav.Metadata
+		metadata *Metadata
 		desc     string
 	}{
 		{"fixtures/kick.wav", "testOutput/kick.wav", nil, "22050 Hz @ 16 bits, 1 channel(s), 44100 avg bytes/sec, duration: 204.172335ms"},
 		{"fixtures/kick-16b441k.wav", "testOutput/kick-16b441k.wav", nil, "2 ch,  44100 Hz, 'lpcm' 16-bit little-endian signed integer"},
 		{"fixtures/bass.wav", "testOutput/bass.wav", nil, "44100 Hz @ 24 bits, 2 channel(s), 264600 avg bytes/sec, duration: 543.378684ms"},
-		{"fixtures/8bit.wav", "testOutput/8bit.wav", &wav.Metadata{
+		{"fixtures/8bit.wav", "testOutput/8bit.wav", &Metadata{
 			Artist: "Matt", Copyright: "copyleft", Comments: "A comment", CreationDate: "2017-12-12", Engineer: "Matt A", Technician: "Matt Aimonetti",
 			Genre: "test", Keywords: "go code", Medium: "Virtual", Title: "Titre", Product: "go-audio", Subject: "wav codec",
 			Software: "go-audio codec", Source: "Audacity generator", Location: "Los Angeles", TrackNbr: "42",
@@ -32,7 +30,7 @@ func TestEncoderRoundTrip(t *testing.T) {
 		if err != nil {
 			t.Fatalf("couldn't open %s %v", tc.in, err)
 		}
-		d := wav.NewDecoder(in)
+		d := NewDecoder(in)
 		buf, err := d.FullPCMBuffer()
 		if err != nil {
 			t.Fatalf("couldn't read buffer %s %v", tc.in, err)
@@ -45,18 +43,18 @@ func TestEncoderRoundTrip(t *testing.T) {
 			t.Fatalf("couldn't create %s %v", tc.out, err)
 		}
 
-		e := wav.NewEncoder(out,
+		e := NewEncoder(out,
 			buf.Format.SampleRate,
 			int(d.BitDepth),
 			buf.Format.NumChannels,
 			int(d.WavAudioFormat))
-		if err := e.Write(buf); err != nil {
+		if err = e.Write(buf); err != nil {
 			t.Fatal(err)
 		}
 		if tc.metadata != nil {
 			e.Metadata = tc.metadata
 		}
-		if err := e.Close(); err != nil {
+		if err = e.Close(); err != nil {
 			t.Fatal(err)
 		}
 		out.Close()
@@ -66,7 +64,7 @@ func TestEncoderRoundTrip(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		nd := wav.NewDecoder(nf)
+		nd := NewDecoder(nf)
 		nBuf, err := nd.FullPCMBuffer()
 		if err != nil {
 			t.Fatalf("couldn't extract the PCM from %s - %v", nf.Name(), err)

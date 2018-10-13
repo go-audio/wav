@@ -1,11 +1,9 @@
-package wav_test
+package wav
 
 import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/go-audio/wav"
 )
 
 func ExampleDecoder_Duration() {
@@ -14,7 +12,7 @@ func ExampleDecoder_Duration() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	dur, err := wav.NewDecoder(f).Duration()
+	dur, err := NewDecoder(f).Duration()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +26,7 @@ func ExampleDecoder_IsValidFile() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	fmt.Printf("is this file valid: %t", wav.NewDecoder(f).IsValidFile())
+	fmt.Printf("is this file valid: %t", NewDecoder(f).IsValidFile())
 	// Output: is this file valid: true
 }
 
@@ -40,7 +38,7 @@ func ExampleEncoder_Write() {
 
 	// Decode the original audio file
 	// and collect audio content and information.
-	d := wav.NewDecoder(f)
+	d := NewDecoder(f)
 	buf, err := d.FullPCMBuffer()
 	if err != nil {
 		panic(err)
@@ -55,17 +53,17 @@ func ExampleEncoder_Write() {
 	}
 
 	// setup the encoder and write all the frames
-	e := wav.NewEncoder(out,
+	e := NewEncoder(out,
 		buf.Format.SampleRate,
 		int(d.BitDepth),
 		buf.Format.NumChannels,
 		int(d.WavAudioFormat))
-	if err := e.Write(buf); err != nil {
+	if err = e.Write(buf); err != nil {
 		panic(err)
 	}
 	// close the encoder to make sure the headers are properly
 	// set and the data is flushed.
-	if err := e.Close(); err != nil {
+	if err = e.Close(); err != nil {
 		panic(err)
 	}
 	out.Close()
@@ -75,7 +73,7 @@ func ExampleEncoder_Write() {
 	if err != nil {
 		panic(err)
 	}
-	d2 := wav.NewDecoder(out)
+	d2 := NewDecoder(out)
 	d2.ReadInfo()
 	fmt.Println("New file ->", d2)
 	out.Close()
@@ -92,7 +90,7 @@ func ExampleDecoder_ReadMetadata() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	d := wav.NewDecoder(f)
+	d := NewDecoder(f)
 	d.ReadMetadata()
 	if d.Err() != nil {
 		log.Fatal(err)

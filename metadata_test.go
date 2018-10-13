@@ -1,28 +1,26 @@
-package wav_test
+package wav
 
 import (
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/go-audio/wav"
 )
 
 func TestDecoder_ReadMetadata(t *testing.T) {
 	testCases := []struct {
 		in       string
-		metadata *wav.Metadata
+		metadata *Metadata
 	}{
 		{in: "fixtures/listinfo.wav",
-			metadata: &wav.Metadata{
+			metadata: &Metadata{
 				Artist: "artist", Title: "track title", Product: "album title",
 				TrackNbr: "42", CreationDate: "2017", Genre: "genre", Comments: "my comment",
 			},
 		},
 		{in: "fixtures/kick.wav"},
-		{in: "fixtures/flloop.wav", metadata: &wav.Metadata{
+		{in: "fixtures/flloop.wav", metadata: &Metadata{
 			Software: "FL Studio (beta)",
-			CuePoints: []*wav.CuePoint{
+			CuePoints: []*CuePoint{
 				0:  {ID: [4]uint8{0x1, 0x0, 0x0, 0x0}, Position: 0x0, DataChunkID: [4]uint8{'d', 'a', 't', 'a'}},
 				1:  {ID: [4]uint8{0x2, 0x0, 0x0, 0x0}, Position: 0x1a5e, DataChunkID: [4]uint8{'d', 'a', 't', 'a'}, SampleOffset: 0x1a5e},
 				2:  {ID: [4]uint8{0x3, 0x0, 0x0, 0x0}, Position: 0x34bc, DataChunkID: [4]uint8{'d', 'a', 't', 'a'}, SampleOffset: 0x34bc},
@@ -40,8 +38,8 @@ func TestDecoder_ReadMetadata(t *testing.T) {
 				14: {ID: [4]uint8{0xf, 0x0, 0x0, 0x0}, Position: 0x17124, DataChunkID: [4]uint8{0x64, 0x61, 0x74, 0x61}, SampleOffset: 0x17124},
 				15: {ID: [4]uint8{0x10, 0x0, 0x0, 0x0}, Position: 0x18b82, DataChunkID: [4]uint8{0x64, 0x61, 0x74, 0x61}, SampleOffset: 0x18b82},
 			},
-			SamplerInfo: &wav.SamplerInfo{SamplePeriod: 22676, MIDIUnityNote: 60, NumSampleLoops: 1,
-				Loops: []*wav.SampleLoop{
+			SamplerInfo: &SamplerInfo{SamplePeriod: 22676, MIDIUnityNote: 60, NumSampleLoops: 1,
+				Loops: []*SampleLoop{
 					{CuePointID: [4]byte{0, 0, 2, 0}, Type: 1024, Start: 0, End: 107999, Fraction: 0, PlayCount: 0},
 				}},
 		}},
@@ -53,7 +51,7 @@ func TestDecoder_ReadMetadata(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d := wav.NewDecoder(f)
+			d := NewDecoder(f)
 			d.ReadMetadata()
 			if err = d.Err(); err != nil {
 				t.Fatal(err)

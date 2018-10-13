@@ -1,4 +1,4 @@
-package wav_test
+package wav
 
 import (
 	"os"
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-audio/audio"
-	"github.com/go-audio/wav"
 )
 
 func TestDecoderSeek(t *testing.T) {
@@ -16,7 +15,7 @@ func TestDecoderSeek(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	d := wav.NewDecoder(f)
+	d := NewDecoder(f)
 	// Move read cursor to the middle of the file
 	// Using whence=0 should be os.SEEK_SET for go<=1.6.x else io.SeekStart
 	cur, err := d.Seek(d.PCMLen()/2, 0)
@@ -41,7 +40,7 @@ func TestDecoder_Duration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		dur, err := wav.NewDecoder(f).Duration()
+		dur, err := NewDecoder(f).Duration()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -74,7 +73,7 @@ func TestDecoder_IsValidFile(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer f.Close()
-		d := wav.NewDecoder(f)
+		d := NewDecoder(f)
 		if d.IsValidFile() != tc.isValid {
 			t.Fatalf("validation of the wav files doesn't match expected %t, got %t", tc.isValid, d.IsValidFile())
 		}
@@ -100,7 +99,7 @@ func TestReadContent(t *testing.T) {
 			}
 			defer r.Close()
 
-			d := wav.NewDecoder(r)
+			d := NewDecoder(r)
 			total, err := totaledDecoder(d)
 			if err != tc.err {
 				t.Errorf("Expected err to be %v but got %v", tc.err, err)
@@ -134,7 +133,7 @@ func TestDecoder_Attributes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		d := wav.NewDecoder(f)
+		d := NewDecoder(f)
 		d.ReadInfo()
 		f.Close()
 		if int(d.NumChans) != tc.numChannels {
@@ -159,7 +158,7 @@ func TestDecoderMisalignedInstChunk(t *testing.T) {
 	}
 	defer f.Close()
 
-	d := wav.NewDecoder(f)
+	d := NewDecoder(f)
 	intBuf := make([]int, 255)
 	buf := &audio.IntBuffer{Data: intBuf}
 	if _, err := d.PCMBuffer(buf); err != nil {
@@ -209,7 +208,7 @@ func TestDecoder_PCMBuffer(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			d := wav.NewDecoder(f)
+			d := NewDecoder(f)
 
 			samples := []int{}
 			intBuf := make([]int, 255)
@@ -299,7 +298,7 @@ func TestDecoder_FullPCMBuffer(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer f.Close()
-		d := wav.NewDecoder(f)
+		d := NewDecoder(f)
 		buf, err := d.FullPCMBuffer()
 		if err != nil {
 			t.Fatal(err)
@@ -325,7 +324,7 @@ func TestDecoder_FullPCMBuffer(t *testing.T) {
 	}
 }
 
-func totaledDecoder(d *wav.Decoder) (total int64, err error) {
+func totaledDecoder(d *Decoder) (total int64, err error) {
 	format := &audio.Format{
 		NumChannels: int(d.NumChans),
 		SampleRate:  int(d.SampleRate),
