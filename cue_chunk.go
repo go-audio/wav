@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/mattetti/audio/riff"
+	"github.com/go-audio/riff"
 )
 
 // CuePoint defines an offset which marks a noteworthy sections of the audio

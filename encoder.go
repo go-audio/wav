@@ -9,8 +9,7 @@ import (
 	"os"
 
 	"github.com/go-audio/audio"
-
-	"github.com/mattetti/audio/riff"
+	"github.com/go-audio/riff"
 )
 
 // Encoder encodes LPCM data into a wav containter.

@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/mattetti/audio/riff"
+	"github.com/go-audio/riff"
 )
 
 // smpl chunk is documented here:
