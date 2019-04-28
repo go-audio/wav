@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 
 	"github.com/go-audio/audio"
 	"github.com/go-audio/riff"
@@ -195,8 +196,12 @@ func (e *Encoder) Write(buf *audio.IntBuffer) error {
 	return e.addBuffer(buf)
 }
 
-// WriteFrame writes a single frame of data to the underlying writer.
+// WriteFrame writes a single frame (sample) of data to the underlying writer.
 func (e *Encoder) WriteFrame(value interface{}) error {
+	if reflect.TypeOf(value).Kind() == reflect.Slice {
+		return fmt.Errorf("WriteFrame() only writes a single frame. Use WriteFrames() for slices")
+	}
+
 	if !e.wroteHeader {
 		e.writeHeader()
 	}
@@ -215,6 +220,50 @@ func (e *Encoder) WriteFrame(value interface{}) error {
 	}
 
 	e.frames++
+	return e.AddLE(value)
+}
+
+// WriteFrames writes a slice of frames (samples) of data to the underlying writer.
+func (e *Encoder) WriteFrames(value interface{}) error {
+	if !e.wroteHeader {
+		e.writeHeader()
+	}
+	if !e.pcmChunkStarted {
+		// sound header
+		if err := e.AddLE(riff.DataFormatID); err != nil {
+			return fmt.Errorf("error encoding sound header %v", err)
+		}
+		e.pcmChunkStarted = true
+
+		// write a temporary chunksize
+		e.pcmChunkSizePos = e.WrittenBytes
+		if err := e.AddLE(uint32(42)); err != nil {
+			return fmt.Errorf("%v when writing wav data chunk size header", err)
+		}
+	}
+
+	nFrames := 0
+	switch v := value.(type) {
+	// Note that v is of different type in each case clause
+	case []byte:
+		nFrames += len(v)
+	case []int16:
+		nFrames += len(v)
+	case []uint16:
+		nFrames += len(v)
+	case []int32:
+		nFrames += len(v)
+	case []uint32:
+		nFrames += len(v)
+	case []float32:
+		nFrames += len(v)
+	default:
+		nFrames++
+	}
+	// A frame holds samples for each channel
+	nFrames /= e.NumChans
+
+	e.frames += nFrames
 	return e.AddLE(value)
 }
 
