@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 
 	"github.com/go-audio/audio"
@@ -315,10 +314,6 @@ func (e *Encoder) Close() error {
 	// jump back to the end of the file.
 	if _, err := e.w.Seek(0, 2); err != nil {
 		return err
-	}
-	switch e.w.(type) {
-	case *os.File:
-		return e.w.(*os.File).Sync()
 	}
 	return nil
 }
