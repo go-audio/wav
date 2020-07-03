@@ -6,7 +6,11 @@ data using the Waveform Audio File Format https://en.wikipedia.org/wiki/WAV
 */
 package wav
 
-import "errors"
+import (
+	"errors"
+	"math"
+	"time"
+)
 
 var (
 	// ErrPCMChunkNotFound indicates a bad audio file without data
@@ -24,4 +28,20 @@ func clen(n []byte) int {
 		}
 	}
 	return len(n)
+}
+
+func bytesNumFromDuration(dur time.Duration, sampleRate, bitDepth int) int {
+	k := bitDepth / 8
+	return samplesNumFromDuration(dur, sampleRate) * k
+}
+
+func samplesNumFromDuration(dur time.Duration, sampleRate int) int {
+	return int(math.Floor(float64(dur / sampleDuration(sampleRate))))
+}
+
+func sampleDuration(sampleRate int) time.Duration {
+	if sampleRate == 0 {
+		return 0
+	}
+	return time.Second / time.Duration(math.Abs(float64(sampleRate)))
 }
