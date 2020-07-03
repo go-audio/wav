@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/go-audio/audio"
 	"github.com/go-audio/riff"
@@ -14,7 +15,9 @@ import (
 
 // Encoder encodes LPCM data into a wav containter.
 type Encoder struct {
-	w          io.WriteSeeker
+	w   io.WriteSeeker
+	buf *bytes.Buffer
+
 	SampleRate int
 	BitDepth   int
 	NumChans   int
@@ -41,6 +44,7 @@ type Encoder struct {
 func NewEncoder(w io.WriteSeeker, sampleRate, bitDepth, numChans, audioFormat int) *Encoder {
 	return &Encoder{
 		w:              w,
+		buf:            bytes.NewBuffer(make([]byte, 0, bytesNumFromDuration(time.Minute, sampleRate, bitDepth)*numChans)),
 		SampleRate:     sampleRate,
 		BitDepth:       bitDepth,
 		NumChans:       numChans,
@@ -67,26 +71,25 @@ func (e *Encoder) addBuffer(buf *audio.IntBuffer) error {
 
 	frameCount := buf.NumFrames()
 	// performance tweak: setup a buffer so we don't do too many writes
-	bb := bytes.NewBuffer(nil)
 	var err error
 	for i := 0; i < frameCount; i++ {
 		for j := 0; j < buf.Format.NumChannels; j++ {
 			v := buf.Data[i*buf.Format.NumChannels+j]
 			switch e.BitDepth {
 			case 8:
-				if err = binary.Write(bb, binary.LittleEndian, uint8(v)); err != nil {
+				if err = binary.Write(e.buf, binary.LittleEndian, uint8(v)); err != nil {
 					return err
 				}
 			case 16:
-				if err = binary.Write(bb, binary.LittleEndian, int16(v)); err != nil {
+				if err = binary.Write(e.buf, binary.LittleEndian, int16(v)); err != nil {
 					return err
 				}
 			case 24:
-				if err = binary.Write(bb, binary.LittleEndian, audio.Int32toInt24LEBytes(int32(v))); err != nil {
+				if err = binary.Write(e.buf, binary.LittleEndian, audio.Int32toInt24LEBytes(int32(v))); err != nil {
 					return err
 				}
 			case 32:
-				if err = binary.Write(bb, binary.LittleEndian, int32(v)); err != nil {
+				if err = binary.Write(e.buf, binary.LittleEndian, int32(v)); err != nil {
 					return err
 				}
 			default:
@@ -95,11 +98,12 @@ func (e *Encoder) addBuffer(buf *audio.IntBuffer) error {
 		}
 		e.frames++
 	}
-	if n, err := e.w.Write(bb.Bytes()); err != nil {
+	if n, err := e.w.Write(e.buf.Bytes()); err != nil {
 		e.WrittenBytes += n
 		return err
 	}
-	e.WrittenBytes += bb.Len()
+	e.WrittenBytes += e.buf.Len()
+	e.buf.Reset()
 
 	return nil
 }
