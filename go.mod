@@ -1,4 +1,4 @@
-module github.com/go-audio/wav
+module github.com/ivoras/wav
 
 go 1.12
 
