@@ -174,7 +174,7 @@ func (e *Encoder) writeHeader() error {
 }
 
 // Write encodes and writes the passed buffer to the underlying writer.
-// Don't forger to Close() the encoder or the file won't be valid.
+// Don't forget to Close() the encoder or the file won't be valid.
 func (e *Encoder) Write(buf *audio.IntBuffer) error {
 	if !e.wroteHeader {
 		if err := e.writeHeader(); err != nil {
