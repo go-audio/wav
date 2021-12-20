@@ -52,6 +52,10 @@ func NewEncoder(w io.WriteSeeker, sampleRate, bitDepth, numChans, audioFormat in
 	}
 }
 
+func (e *Encoder) SetNotHeader() {
+	e.wroteHeader = true
+}
+
 // AddLE serializes and adds the passed value using little endian
 func (e *Encoder) AddLE(src interface{}) error {
 	e.WrittenBytes += binary.Size(src)
