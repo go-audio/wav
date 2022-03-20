@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/go-audio/riff"
 )
@@ -112,6 +113,10 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 				d.Metadata.Keywords = nullTermStr(scratch)
 			case markerIMED:
 				d.Metadata.Medium = nullTermStr(scratch)
+			}
+
+			if size%2 == 1 {
+				r.Seek(1, io.SeekCurrent)
 			}
 		}
 	}
