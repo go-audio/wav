@@ -3,6 +3,7 @@ package wav
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -24,6 +25,38 @@ func TestDecoderSeek(t *testing.T) {
 	}
 	if cur != d.PCMLen()/2 {
 		t.Fatal("Read cursor no in the expected position")
+	}
+}
+
+func TestDecoderRewind(t *testing.T) {
+	f, err := os.Open("fixtures/bass.wav")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	d := NewDecoder(f)
+	d.ReadInfo()
+	buf := &audio.IntBuffer{Format: d.Format(), Data: make([]int, 512)}
+	n, err := d.PCMBuffer(buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 512 {
+		t.Fatalf("expected to read 512 samples but got %d", n)
+	}
+	if err := d.Rewind(); err != nil {
+		t.Fatal(err)
+	}
+	newBuf := &audio.IntBuffer{Format: d.Format(), Data: make([]int, 512)}
+	n, err = d.PCMBuffer(newBuf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 512 {
+		t.Fatalf("expected to read 512 samples but got %d", n)
+	}
+	if !reflect.DeepEqual(buf.Data, newBuf.Data) {
+		t.Fatal("expected to read the same data after rewinding")
 	}
 }
 

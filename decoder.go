@@ -59,6 +59,27 @@ func (d *Decoder) Seek(offset int64, whence int) (int64, error) {
 	return d.r.Seek(offset, whence)
 }
 
+// Rewind allows the decoder to be rewound to the beginning of the PCM data.
+// This is useful if you want to keep on decoding the same file in a loop.
+func (d *Decoder) Rewind() error {
+
+	_, err := d.r.Seek(0, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("failed to seek back to the start %w", err)
+	}
+	// we have to user a new parser since it's read only and can't be seeked
+	d.parser = riff.New(d.r)
+	d.pcmDataAccessed = false
+	d.PCMChunk = nil
+	d.err = nil
+	d.NumChans = 0
+	err = d.FwdToPCM()
+	if err != nil {
+		return fmt.Errorf("failed to seek to the PCM data: %w", err)
+	}
+	return nil
+}
+
 // SampleBitDepth returns the bit depth encoding of each sample.
 func (d *Decoder) SampleBitDepth() int32 {
 	if d == nil {
@@ -211,9 +232,9 @@ func (d *Decoder) WasPCMAccessed() bool {
 	return d.pcmDataAccessed
 }
 
-// FullPCMBuffer is an inneficient way to access all the PCM data contained in the
+// FullPCMBuffer is an inefficient way to access all the PCM data contained in the
 // audio container. The entire PCM data is held in memory.
-// Consider using Buffer() instead.
+// Consider using PCMBuffer() instead.
 func (d *Decoder) FullPCMBuffer() (*audio.IntBuffer, error) {
 	if !d.WasPCMAccessed() {
 		err := d.FwdToPCM()
