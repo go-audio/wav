@@ -43,13 +43,13 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 		buf := make([]byte, ch.Size)
 		var err error
 		if _, err = ch.Read(buf); err != nil {
-			return fmt.Errorf("failed to read the LIST chunk - %v", err)
+			return fmt.Errorf("failed to read the LIST chunk - %w", err)
 		}
 		r := bytes.NewReader(buf)
 		// INFO subchunk
 		scratch := make([]byte, 4)
 		if _, err = r.Read(scratch); err != nil {
-			return fmt.Errorf("failed to read the INFO subchunk - %v", err)
+			return fmt.Errorf("failed to read the INFO subchunk - %w", err)
 		}
 		if !bytes.Equal(scratch, CIDInfo[:]) {
 			// "expected an INFO subchunk but got %s", string(scratch)
