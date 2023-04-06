@@ -98,7 +98,7 @@ func (d *Decoder) PCMLen() int64 {
 
 // Err returns the first non-EOF error that was encountered by the Decoder.
 func (d *Decoder) Err() error {
-	if d.err == io.EOF {
+	if errors.Is(d.err, io.EOF) {
 		return nil
 	}
 	return d.err
@@ -106,7 +106,7 @@ func (d *Decoder) Err() error {
 
 // EOF returns positively if the underlying reader reached the end of file.
 func (d *Decoder) EOF() bool {
-	if d == nil || d.err == io.EOF {
+	if d == nil || errors.Is(d.err, io.EOF) {
 		return true
 	}
 	return false
@@ -161,7 +161,7 @@ func (d *Decoder) ReadMetadata() {
 		switch chunk.ID {
 		case CIDList:
 			if err = DecodeListChunk(d, chunk); err != nil {
-				if err != io.EOF {
+				if !errors.Is(err, io.EOF) {
 					d.err = err
 				}
 			}
@@ -171,13 +171,13 @@ func (d *Decoder) ReadMetadata() {
 			}
 		case CIDSmpl:
 			if err = DecodeSamplerChunk(d, chunk); err != nil {
-				if err != io.EOF {
+				if !errors.Is(err, io.EOF) {
 					d.err = err
 				}
 			}
 		case CIDCue:
 			if err = DecodeCueChunk(d, chunk); err != nil {
-				if err != io.EOF {
+				if !errors.Is(err, io.EOF) {
 					d.err = err
 				}
 			}
@@ -272,7 +272,7 @@ func (d *Decoder) FullPCMBuffer() (*audio.IntBuffer, error) {
 	}
 	buf.Data = buf.Data[:i]
 
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		err = nil
 	}
 
@@ -314,7 +314,7 @@ func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) (n int, err error) {
 	var m int
 	m, err = d.PCMChunk.R.Read(tmpBuf)
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return m, nil
 		}
 		return m, err
@@ -342,7 +342,7 @@ func (d *Decoder) PCMBuffer(buf *audio.IntBuffer) (n int, err error) {
 		}
 	}
 	buf.Format = format
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		err = nil
 	}
 
