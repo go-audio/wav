@@ -3,6 +3,7 @@ package wav
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 
@@ -73,13 +74,33 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 			return binary.Read(r, binary.LittleEndian, &size)
 		}
 
-		for err == nil {
-			err = readSubHeader()
-			if err != nil {
-				break
+		// This checks and stops early if just a word alignment byte remains to avoid
+		// an io.UnexpectedEOF error from readSubHeader.
+		// TODO(steve): Remove the checks from the for statement if ch.Size is changed
+		// to not include the padding byte.
+		for rem := ch.Size - 4; rem > 1; rem -= int(size) + 8 {
+			if err = readSubHeader(); err != nil {
+				if errors.Is(err, io.EOF) {
+					// All done.
+					break
+				}
+				return fmt.Errorf("read sub header: %w", err)
 			}
-			scratch = make([]byte, size)
-			r.Read(scratch)
+
+			if cap(scratch) >= int(size) {
+				if len(scratch) != int(size) {
+					// Resize scratch.
+					scratch = scratch[:size]
+				}
+			} else {
+				// Expand scratch capacity.
+				scratch = append(make([]byte, int(size)-cap(scratch)), scratch[:cap(scratch)]...)
+			}
+
+			if _, err := r.Read(scratch); err != nil {
+				return fmt.Errorf("read sub header %s data %v: %w", id, scratch, err)
+			}
+
 			switch id {
 			case markerIARL:
 				d.Metadata.Location = nullTermStr(scratch)
@@ -113,10 +134,6 @@ func DecodeListChunk(d *Decoder, ch *riff.Chunk) error {
 				d.Metadata.Keywords = nullTermStr(scratch)
 			case markerIMED:
 				d.Metadata.Medium = nullTermStr(scratch)
-			}
-
-			if size%2 == 1 {
-				r.Seek(1, io.SeekCurrent)
 			}
 		}
 	}
