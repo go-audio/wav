@@ -24,7 +24,7 @@ func DecodeSamplerChunk(d *Decoder, ch *riff.Chunk) error {
 		buf := make([]byte, ch.Size)
 		var err error
 		if _, err = ch.Read(buf); err != nil {
-			return fmt.Errorf("failed to read the smpl chunk - %v", err)
+			return fmt.Errorf("failed to read the smpl chunk - %w", err)
 		}
 		if d.Metadata == nil {
 			d.Metadata = &Metadata{}

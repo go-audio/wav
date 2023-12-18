@@ -2,6 +2,7 @@ package wav
 
 import (
 	"os"
+	"path"
 	"reflect"
 	"testing"
 )
@@ -46,7 +47,7 @@ func TestDecoder_ReadMetadata(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.in, func(t *testing.T) {
+		t.Run(path.Base(tc.in), func(t *testing.T) {
 			f, err := os.Open(tc.in)
 			if err != nil {
 				t.Fatal(err)

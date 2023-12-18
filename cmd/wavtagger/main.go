@@ -59,12 +59,12 @@ func main() {
 func tagFile(path string) error {
 	in, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("failed to open %s - %v", path, err)
+		return fmt.Errorf("failed to open %s - %w", path, err)
 	}
 	d := wav.NewDecoder(in)
 	buf, err := d.FullPCMBuffer()
 	if err != nil {
-		return fmt.Errorf("couldn't read buffer %s %v", path, err)
+		return fmt.Errorf("couldn't read buffer %s %w", path, err)
 	}
 	in.Close()
 
@@ -74,7 +74,7 @@ func tagFile(path string) error {
 
 	out, err := os.Create(outPath)
 	if err != nil {
-		return fmt.Errorf("couldn't create %s %v", outPath, err)
+		return fmt.Errorf("couldn't create %s %w", outPath, err)
 	}
 	defer out.Close()
 
@@ -84,7 +84,7 @@ func tagFile(path string) error {
 		buf.Format.NumChannels,
 		int(d.WavAudioFormat))
 	if err := e.Write(buf); err != nil {
-		return fmt.Errorf("failed to write audio buffer - %v", err)
+		return fmt.Errorf("failed to write audio buffer - %w", err)
 	}
 	e.Metadata = &wav.Metadata{}
 	if *flagArtist != "" {
@@ -115,7 +115,7 @@ func tagFile(path string) error {
 		e.Metadata.Genre = *flagGenre
 	}
 	if err := e.Close(); err != nil {
-		return fmt.Errorf("failed to close %s - %v", outPath, err)
+		return fmt.Errorf("failed to close %s - %w", outPath, err)
 	}
 	fmt.Println("Tagged file available at", outPath)
 

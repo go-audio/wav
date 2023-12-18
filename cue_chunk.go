@@ -62,12 +62,12 @@ func DecodeCueChunk(d *Decoder, ch *riff.Chunk) error {
 		buf := make([]byte, ch.Size)
 		var err error
 		if _, err = ch.Read(buf); err != nil {
-			return fmt.Errorf("failed to read the CUE chunk - %v", err)
+			return fmt.Errorf("failed to read the CUE chunk - %w", err)
 		}
 		r := bytes.NewReader(buf)
 		var nbrCues uint32
 		if err := binary.Read(r, binary.LittleEndian, &nbrCues); err != nil {
-			return fmt.Errorf("failed to read the number of cues - %v", err)
+			return fmt.Errorf("failed to read the number of cues - %w", err)
 		}
 		if nbrCues > 0 {
 			if d.Metadata == nil {
