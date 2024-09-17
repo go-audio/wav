@@ -6,7 +6,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -42,7 +41,7 @@ func main() {
 	}
 	if *flagDirToTag != "" {
 		var filePath string
-		fileInfos, _ := ioutil.ReadDir(*flagDirToTag)
+		fileInfos, _ := os.ReadDir(*flagDirToTag)
 		for _, fi := range fileInfos {
 			if strings.HasPrefix(
 				strings.ToLower(filepath.Ext(fi.Name())),
