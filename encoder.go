@@ -129,7 +129,7 @@ func (e *Encoder) writeHeader() error {
 		return err
 	}
 	// file size uint32, to update later on.
-	if err := e.AddLE(uint32(42)); err != nil {
+	if err := e.AddLE(uint32(4294967295)); err != nil {
 		return err
 	}
 	// wave headers
@@ -191,7 +191,7 @@ func (e *Encoder) Write(buf *audio.IntBuffer) error {
 
 		// write a temporary chunksize
 		e.pcmChunkSizePos = e.WrittenBytes
-		if err := e.AddLE(uint32(42)); err != nil {
+		if err := e.AddLE(uint32(4294967295)); err != nil {
 			return fmt.Errorf("%w when writing wav data chunk size header", err)
 		}
 	}
@@ -213,7 +213,7 @@ func (e *Encoder) WriteFrame(value interface{}) error {
 
 		// write a temporary chunksize
 		e.pcmChunkSizePos = e.WrittenBytes
-		if err := e.AddLE(uint32(42)); err != nil {
+		if err := e.AddLE(uint32(4294967295)); err != nil {
 			return fmt.Errorf("%w when writing wav data chunk size header", err)
 		}
 	}
